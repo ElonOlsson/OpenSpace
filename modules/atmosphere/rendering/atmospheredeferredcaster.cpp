@@ -252,22 +252,22 @@ void AtmosphereDeferredcaster::preRaycast(const RenderData& renderData,
             program.setUniform(_uniformCache.ozoneLayerEnabled, _ozoneEnabled);
             program.setUniform(_uniformCache.HO, _ozoneHeightScale);
             program.setUniform(_uniformCache.betaOzoneExtinction, _ozoneExtinctionCoeff);
-            program.setUniform(_uniformCache.SAMPLES_R, _r_samples);
-            program.setUniform(_uniformCache.SAMPLES_MU, _mu_samples);
-            program.setUniform(_uniformCache.SAMPLES_MU_S, _mu_s_samples);
-            program.setUniform(_uniformCache.SAMPLES_NU, _nu_samples);
+            //program.setUniform(_uniformCache.SAMPLES_R, _r_samples);
+            //program.setUniform(_uniformCache.SAMPLES_MU, _mu_samples);
+            //program.setUniform(_uniformCache.SAMPLES_MU_S, _mu_s_samples);
+            //program.setUniform(_uniformCache.SAMPLES_NU, _nu_samples);
 
             float Rg = _atmospherePlanetRadius;
             float Rt = _atmosphereRadius;
             program.setUniform(_uniformCache3.Rg2, Rg * Rg);
-            program.setUniform(_uniformCache3.Rt2, Rt * Rt);
+            //program.setUniform(_uniformCache3.Rt2, Rt * Rt);
             program.setUniform(_uniformCache3.H, sqrt((Rt * Rt) - (Rg * Rg)));
             program.setUniform(_uniformCache3.H2, (Rt * Rt) - (Rg * Rg));
             program.setUniform(_uniformCache3.invSamplesMu, 1.0f / float(_mu_samples));
             program.setUniform(_uniformCache3.invSamplesR, 1.0f / float(_r_samples));
             program.setUniform(_uniformCache3.invSamplesMuS, 1.0f / float(_mu_s_samples));
             program.setUniform(_uniformCache3.invSamplesNu, 1.0f / float(_nu_samples));
-            program.setUniform(_uniformCache3.RtMinusRg, float(Rt - Rg));
+            //program.setUniform(_uniformCache3.RtMinusRg, float(Rt - Rg));
             program.setUniform(_uniformCache3.invRtMinusRg, 1.0f / float(Rt - Rg));
             
             // Object Space
