@@ -30,8 +30,8 @@ out vec4 renderTarget1;
 
 uniform int layer;
 
-uniform sampler3D deltaSRTexture;
-uniform sampler3D deltaSMTexture;
+//uniform sampler3D deltaSRTexture;
+//uniform sampler3D deltaSMTexture;
 
 void main(void) {
   // First we convert the window's fragment coordinate to

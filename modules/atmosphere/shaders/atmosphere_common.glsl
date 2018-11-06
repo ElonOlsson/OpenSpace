@@ -86,6 +86,17 @@ uniform int SAMPLES_MU;
 uniform int SAMPLES_MU_S;
 uniform int SAMPLES_NU;
 
+uniform float Rg2;
+uniform float Rt2;
+uniform float H;
+uniform float H2;
+uniform float invSamplesMu;
+uniform float invSamplesR;
+uniform float invSamplesMuS;
+uniform float invSamplesNu;
+uniform float RtMinusRg;
+uniform float invRtMinusRg;
+
 const float ATM_EPSILON = 1.0;
 
 // Integration steps
@@ -96,18 +107,16 @@ const int INSCATTER_SPHERICAL_INTEGRAL_SAMPLES = 16;
 
 const float M_PI = 3.141592657;
 
-uniform sampler2D transmittanceTexture;
+#define INSCATTER_4D 1
+#define DELTASR_4D 2
+#define DELTASM_4D 3
+#define DELTAJ_4D 4
 
-float Rg2    = Rg * Rg;
-float Rt2    = Rt * Rt;
-float H      = sqrt(Rt2 - Rg2);
-float H2     = Rt2 - Rg2;
-float invSamplesMu = 1.0f / float(SAMPLES_MU);
-float invSamplesR = 1.0f / float(SAMPLES_R);
-float invSamplesMuS = 1.0f / float(SAMPLES_MU_S);
-float invSamplesNu = 1.0f / float(SAMPLES_NU);
-float RtMinusRg = float(Rt - Rg);
-float invRtMinusRg = 1.0f / RtMinusRg;
+uniform sampler2D transmittanceTexture;
+uniform sampler3D inscatterTexture;
+uniform sampler3D deltaSRTexture;
+uniform sampler3D deltaSMTexture;
+uniform sampler3D deltaJTexture;
 
 float opticalDepth(const float localH, const float r, const float mu, const float d) {
   float invH = 1.0/localH;
@@ -354,45 +363,65 @@ float miePhaseFunction(const float mu) {
 // mu := cosine of the zeith angle of vec(v). Or mu = (vec(x) * vec(v))/r
 // muSun := cosine of the zeith angle of vec(s). Or muSun = (vec(s) * vec(v))
 // nu := cosine of the angle between vec(s) and vec(v)
-vec4 texture4D(sampler3D table, const float r, const float mu, 
+vec4 texture4D(const int tex, const float r, const float mu, 
                 const float muSun, const float nu)
 {
-  //float Rg2    = Rg * Rg;
-  //float Rt2    = Rt * Rt;
-  float r2     = r * r;
-  //float H      = sqrt(Rt2 - Rg2);
-  float rho    = sqrt(r2 - Rg2);
-  float rmu    = r * mu;
-  float delta  = rmu * rmu - r2 + Rg2;
-  //float invSamplesMu = 1.0f / float(SAMPLES_MU);
-  //float invSamplesR = 1.0f / float(SAMPLES_R);
-  //float invSamplesMuS = 1.0f / float(SAMPLES_MU_S);
-  //float invSamplesNu = 1.0f / float(SAMPLES_NU);
-  // vec4 cst     = rmu < 0.0f && delta > 0.0f ?
-  //   vec4(1.0f, 0.0f, 0.0f, 0.5f - 0.5f / float(SAMPLES_MU)) :
-  //   vec4(-1.0f, H * H, H, 0.5f + 0.5f / float(SAMPLES_MU));
+     //float Rg2    = Rg * Rg;
+     //float Rt2    = Rt * Rt;
+     float r2     = r * r;
+     //float H      = sqrt(Rt2 - Rg2);
+     float rho    = sqrt(r2 - Rg2);
+     float rmu    = r * mu;
+     float delta  = rmu * rmu - r2 + Rg2;
+      //float invSamplesMu = 1.0f / float(SAMPLES_MU);
+     //float invSamplesR = 1.0f / float(SAMPLES_R);
+     //float invSamplesMuS = 1.0f / float(SAMPLES_MU_S);
+     //float invSamplesNu = 1.0f / float(SAMPLES_NU);
+     // vec4 cst     = rmu < 0.0f && delta > 0.0f ?
+     //   vec4(1.0f, 0.0f, 0.0f, 0.5f - 0.5f / float(SAMPLES_MU)) :
+     //   vec4(-1.0f, H * H, H, 0.5f + 0.5f / float(SAMPLES_MU));
+     
+     vec4 v1 = vec4(1.0f, 0.0f, 0.0f, 0.5f - 0.5f * invSamplesMu);
+     
+     vec4 v2 = vec4(-1.0, H2, H, 0.5 + 0.5 * invSamplesMu);
+     return vec4(1.0, 0.0, 0.0, 1.0);
+     //vec4 cst = ((rmu < 0.0f) && (delta > 0.0f)) ? v1 : v2;
+        
+     //return vec4(1.0, 0.0, 0.0, 1.0);
+    // //float u_r    = 0.5f / float(SAMPLES_R) + rho / H * (1.0f - 1.0f / float(SAMPLES_R));
+    // float u_r    = 0.5f * invSamplesR + rho / H * (1.0f - invSamplesR);
 
-  vec4 cst     = rmu < 0.0f && delta > 0.0f ?
-    vec4(1.0f, 0.0f, 0.0f, 0.5f - 0.5f * invSamplesMu) :
-    vec4(-1.0f, H2, H, 0.5f + 0.5f * invSamplesMu);
+    // //float u_mu   = cst.w + (rmu * cst.x + sqrt(delta + cst.y)) / (rho + cst.z) * (0.5f - 1.0f / float(SAMPLES_MU));
+    // float u_mu   = cst.w + (rmu * cst.x + sqrt(delta + cst.y)) / (rho + cst.z) * (0.5f - invSamplesMu);
+    // // float u_mu_s = 0.5f / float(SAMPLES_MU_S) +
+    // //   (atan(max(muSun, -0.1975) * tan(1.26f * 1.1f)) / 1.1f + (1.0f - 0.26f)) * 0.5f * (1.0f - 1.0f / float(SAMPLES_MU_S));
+    // float u_mu_s = 0.5f * invSamplesMuS +
+    //   (atan(max(muSun, -0.1975) * tan(1.386f)) * 0.9090909090909090 + (0.74f)) * 0.5f * (1.0f - invSamplesMuS);
+    // float lerp = (nu + 1.0f) / 2.0f * (float(SAMPLES_NU) - 1.0f);
+    // float u_nu = floor(lerp);
+    // lerp = lerp - u_nu;
 
-  //float u_r    = 0.5f / float(SAMPLES_R) + rho / H * (1.0f - 1.0f / float(SAMPLES_R));
-  float u_r    = 0.5f * invSamplesR + rho / H * (1.0f - invSamplesR);
-  //float u_mu   = cst.w + (rmu * cst.x + sqrt(delta + cst.y)) / (rho + cst.z) * (0.5f - 1.0f / float(SAMPLES_MU));
-  float u_mu   = cst.w + (rmu * cst.x + sqrt(delta + cst.y)) / (rho + cst.z) * (0.5f - invSamplesMu);
-  // float u_mu_s = 0.5f / float(SAMPLES_MU_S) +
-  //   (atan(max(muSun, -0.1975) * tan(1.26f * 1.1f)) / 1.1f + (1.0f - 0.26f)) * 0.5f * (1.0f - 1.0f / float(SAMPLES_MU_S));
-  float u_mu_s = 0.5f * invSamplesMuS +
-    (atan(max(muSun, -0.1975) * tan(1.386f)) * 0.9090909090909090 + (0.74f)) * 0.5f * (1.0f - invSamplesMuS);
-  float lerp = (nu + 1.0f) / 2.0f * (float(SAMPLES_NU) - 1.0f);
-  float u_nu = floor(lerp);
-  lerp = lerp - u_nu;
+    // // return texture(table, vec3((u_nu + u_mu_s) / float(SAMPLES_NU), u_mu, u_r)) * (1.0f - lerp) +
+    // //   texture(table, vec3((u_nu + u_mu_s + 1.0f) / float(SAMPLES_NU), u_mu, u_r)) * lerp;
+    
+    // // JCC: Intel's compiler doesn't allow passing a sampler to a method.
+    // // return texture(table, vec3((u_nu + u_mu_s) * invSamplesNu, u_mu, u_r)) * (1.0f - lerp) +
+    // //   texture(table, vec3((u_nu + u_mu_s + 1.0f) * invSamplesNu, u_mu, u_r)) * lerp;
 
-  // return texture(table, vec3((u_nu + u_mu_s) / float(SAMPLES_NU), u_mu, u_r)) * (1.0f - lerp) +
-  //   texture(table, vec3((u_nu + u_mu_s + 1.0f) / float(SAMPLES_NU), u_mu, u_r)) * lerp;
+    // if (tex == INSCATTER_4D) {
+    //   return texture(inscatterTexture, vec3((u_nu + u_mu_s) * invSamplesNu, u_mu, u_r)) * (1.0f - lerp) +
+    //     texture(inscatterTexture, vec3((u_nu + u_mu_s + 1.0f) * invSamplesNu, u_mu, u_r)) * lerp;
+    // } else if (tex == DELTASR_4D) {
+    //   return texture(deltaSRTexture, vec3((u_nu + u_mu_s) * invSamplesNu, u_mu, u_r)) * (1.0f - lerp) +
+    //     texture(deltaSRTexture, vec3((u_nu + u_mu_s + 1.0f) * invSamplesNu, u_mu, u_r)) * lerp;
+    // } else if (tex == DELTASM_4D) {
+    //   return texture(deltaSMTexture, vec3((u_nu + u_mu_s) * invSamplesNu, u_mu, u_r)) * (1.0f - lerp) +
+    //     texture(deltaSMTexture, vec3((u_nu + u_mu_s + 1.0f) * invSamplesNu, u_mu, u_r)) * lerp;
+    // } else if (tex == DELTAJ_4D) {
+    //   return texture(deltaJTexture, vec3((u_nu + u_mu_s) * invSamplesNu, u_mu, u_r)) * (1.0f - lerp) +
+    //     texture(deltaJTexture, vec3((u_nu + u_mu_s + 1.0f) * invSamplesNu, u_mu, u_r)) * lerp;
+    // }
   
-  return texture(table, vec3((u_nu + u_mu_s) * invSamplesNu, u_mu, u_r)) * (1.0f - lerp) +
-    texture(table, vec3((u_nu + u_mu_s + 1.0f) * invSamplesNu, u_mu, u_r)) * lerp;
 }
 
 // -- Given the irradiance texture table, the cosine of zenith sun vector

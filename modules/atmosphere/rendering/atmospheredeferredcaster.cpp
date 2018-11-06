@@ -102,6 +102,11 @@ namespace {
         "sunDirectionObj", "hardShadows", "transmittanceTexture", "irradianceTexture",
         "inscatterTexture"
     };
+    
+    constexpr const std::array<const char*, 10> UniformNames3 = {
+        "Rg2", "Rt2", "H", "H2", "invSamplesMu", "invSamplesR",
+        "invSamplesMuS", "invSamplesNu", "RtMinusRg", "invRtMinusRg"
+    };
 
     constexpr const char* GlslDeferredcastPath =
         "${MODULES}/atmosphere/shaders/atmosphere_deferred_fs.glsl";
@@ -252,6 +257,19 @@ void AtmosphereDeferredcaster::preRaycast(const RenderData& renderData,
             program.setUniform(_uniformCache.SAMPLES_MU_S, _mu_s_samples);
             program.setUniform(_uniformCache.SAMPLES_NU, _nu_samples);
 
+            float Rg = _atmospherePlanetRadius;
+            float Rt = _atmosphereRadius;
+            program.setUniform(_uniformCache3.Rg2, Rg * Rg);
+            program.setUniform(_uniformCache3.Rt2, Rt * Rt);
+            program.setUniform(_uniformCache3.H, sqrt((Rt * Rt) - (Rg * Rg)));
+            program.setUniform(_uniformCache3.H2, (Rt * Rt) - (Rg * Rg));
+            program.setUniform(_uniformCache3.invSamplesMu, 1.0f / float(_mu_samples));
+            program.setUniform(_uniformCache3.invSamplesR, 1.0f / float(_r_samples));
+            program.setUniform(_uniformCache3.invSamplesMuS, 1.0f / float(_mu_s_samples));
+            program.setUniform(_uniformCache3.invSamplesNu, 1.0f / float(_nu_samples));
+            program.setUniform(_uniformCache3.RtMinusRg, float(Rt - Rg));
+            program.setUniform(_uniformCache3.invRtMinusRg, 1.0f / float(Rt - Rg));
+            
             // Object Space
             glm::dmat4 inverseModelMatrix = glm::inverse(_modelTransform);
             program.setUniform(
@@ -479,6 +497,7 @@ void AtmosphereDeferredcaster::initializeCachedVariables(
 {
     ghoul::opengl::updateUniformLocations(program, _uniformCache, UniformNames1);
     ghoul::opengl::updateUniformLocations(program, _uniformCache2, UniformNames2);
+    ghoul::opengl::updateUniformLocations(program, _uniformCache3, UniformNames3);
 }
 
 void AtmosphereDeferredcaster::update(const UpdateData&) {}
@@ -1334,6 +1353,18 @@ void AtmosphereDeferredcaster::loadAtmosphereDataIntoShaderProgram(
     shaderProg->setUniform("SAMPLES_MU", _mu_samples);
     shaderProg->setUniform("SAMPLES_MU_S", _mu_s_samples);
     shaderProg->setUniform("SAMPLES_NU", _nu_samples);
+    float Rg = _atmospherePlanetRadius;
+    float Rt = _atmosphereRadius;
+    shaderProg->setUniform("Rg2", Rg * Rg);
+    shaderProg->setUniform("Rt2", Rt * Rt);
+    shaderProg->setUniform("H", sqrt((Rt * Rt) - (Rg * Rg)));
+    shaderProg->setUniform("H2", (Rt * Rt) - (Rg * Rg));
+    shaderProg->setUniform("invSamplesMu", 1.0f / float(_mu_samples));
+    shaderProg->setUniform("invSamplesR", 1.0f / float(_r_samples));
+    shaderProg->setUniform("invSamplesMuS", 1.0f / float(_mu_s_samples));
+    shaderProg->setUniform("invSamplesNu", 1.0f / float(_nu_samples));
+    shaderProg->setUniform("RtMinusRg", float(Rt - Rg));
+    shaderProg->setUniform("invRtMinusRg", 1.0f / float(Rt - Rg));
     shaderProg->setUniform("ozoneLayerEnabled", _ozoneEnabled);
     shaderProg->setUniform("HO", _ozoneHeightScale);
     shaderProg->setUniform("betaOzoneExtinction", _ozoneExtinctionCoeff);

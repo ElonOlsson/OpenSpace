@@ -32,7 +32,7 @@ uniform float r;
 uniform vec4 dhdH;
 
 //uniform sampler2D transmittanceTexture;
-uniform sampler3D deltaJTexture;
+//uniform sampler3D deltaJTexture;
 
 // The integrand here is the f(y) of the trapezoidal rule:
 vec3 integrand(const float r, const float mu, const float muSun, const float nu, const float dist) {
@@ -48,7 +48,7 @@ vec3 integrand(const float r, const float mu, const float muSun, const float nu,
   // But vec(y_i) = vec(x) + vec(dist), and vec(x) dot vec(s) = muSun, cos(sigma_i + theta_i) = nu
   float muSun_i = (r * muSun + dist * nu) / r_i;
   // The irradiance attenuated from point r until y (y-x = dist)
-  return transmittance(r, mu, dist) * texture4D(deltaJTexture, r_i, mu_i, muSun_i, nu).rgb;
+  return transmittance(r, mu, dist) * texture4D(DELTAJ_4D, r_i, mu_i, muSun_i, nu).rgb;
 }
 
 vec3 inscatter(float r, float mu, float muSun, float nu) {

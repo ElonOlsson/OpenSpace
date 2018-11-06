@@ -139,6 +139,9 @@ private:
         dSGCTViewToWorldMatrix, dCamPosObj, sunDirectionObj,
         hardShadows, transmittanceTexture, irradianceTexture,
         inscatterTexture) _uniformCache2;
+    UniformCache(Rg2, Rt2, H, H2, invSamplesMu, invSamplesR,
+                 invSamplesMuS, invSamplesNu, RtMinusRg,
+                 invRtMinusRg) _uniformCache3;
 
     GLuint _transmittanceTableTexture;
     GLuint _irradianceTableTexture;

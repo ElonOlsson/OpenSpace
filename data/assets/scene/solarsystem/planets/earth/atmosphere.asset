@@ -75,7 +75,7 @@ local Atmosphere = {
             },
             Debug = {
                PreCalculatedTextureScale = 1.0,
-               SaveCalculatedTextures = false
+               SaveCalculatedTextures = true
             }
         },
         ShadowGroup = {

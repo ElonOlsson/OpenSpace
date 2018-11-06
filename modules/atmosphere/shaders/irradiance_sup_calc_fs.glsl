@@ -36,8 +36,8 @@ const float stepPhi = (2.0f * M_PI) / float(IRRADIANCE_INTEGRAL_SAMPLES);
 const float stepTheta = M_PI / (2.0f * float(IRRADIANCE_INTEGRAL_SAMPLES));
 
 //uniform sampler2D transmittanceTexture;
-uniform sampler3D deltaSRTexture;
-uniform sampler3D deltaSMTexture;
+//uniform sampler3D deltaSRTexture;
+//uniform sampler3D deltaSMTexture;
 
 void main(void) {
   
@@ -74,8 +74,8 @@ void main(void) {
       if (firstIteraction == 1) {
         float phaseRay = rayleighPhaseFunction(nu);
         float phaseMie = miePhaseFunction(nu);
-        vec3 singleRay = texture4D(deltaSRTexture, r, w.z, muSun, nu).rgb;
-        vec3 singleMie = texture4D(deltaSMTexture, r, w.z, muSun, nu).rgb;
+        vec3 singleRay = texture4D(DELTASR_4D, r, w.z, muSun, nu).rgb;
+        vec3 singleMie = texture4D(DELTASM_4D, r, w.z, muSun, nu).rgb;
         // w.z is the cosine(theta) = mu for vec(w) and also vec(w) dot vec(n(xo))
         irradianceE += (singleRay * phaseRay + singleMie * phaseMie) * w.z * dw;
       } else {
@@ -83,7 +83,7 @@ void main(void) {
         // iteraction, we are getting the updated result of deltaE (not the single irradiance light but the
         // accumulated (higher order) irradiance light.
         // w.z is the cosine(theta) = mu for vec(w) and also vec(w) dot vec(n(xo))
-        irradianceE += texture4D(deltaSRTexture, r, w.z, muSun, nu).rgb * w.z * dw;
+        irradianceE += texture4D(DELTASR_4D, r, w.z, muSun, nu).rgb * w.z * dw;
       }
     }
   }
